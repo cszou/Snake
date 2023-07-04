@@ -1,4 +1,6 @@
 import random
+import threading
+import time
 from turtle import *
 
 # global variables for screen setup
@@ -20,11 +22,11 @@ class Apple(Turtle):
         self.color('red')
         self.shapesize(0.5)
         self.up()
-        self.setposition(random.randint(-19, 19) * 12.5, random.randint(-19, 19) * 12.5)
+        self.setposition(random.randint(-18, 18) * 12.5, random.randint(-18, 18) * 12.5)
 
     # move to new position
     def newPos(self):
-        self.goto(random.randint(-19, 19) * 12.5, random.randint(-19, 19) * 12.5)
+        self.goto(random.randint(-18, 18) * 12.5, random.randint(-18, 18) * 12.5)
 
 
 # Snake class extends Turtle
@@ -77,6 +79,8 @@ class Game:
         self.screenSetup()
         self.mySnake = Snake()
         self.myApple = Apple()
+        self.t = time.time()
+        self.isPaused = False
 
     # screen setup
     def screenSetup(self):
@@ -87,28 +91,34 @@ class Game:
 
     # snake moving control
     def move(self):
-        if not checkDis(self.mySnake.pos(), self.myApple.pos()):
-            self.mySnake.clearstamps(1)
-            self.mySnake.segments.pop(0)
+        if self.isPaused:
+            self.screen.ontimer(self.move, self.inv)
+            self.screen.title("********** Game Paused **********")
         else:
-            self.score += 1
             self.screen.title("Snake Game - Score: " + str(self.score))
-            if self.score % 5 == 0 and self.inv > 50:
-                self.inv -= 50
-            self.myApple.newPos()
-        self.mySnake.forward(12.5)
-        self.mySnake.stamp()
-        self.mySnake.segments.append(self.mySnake.pos())
-        self.screen.update()
-        self.screen.ontimer(self.move, self.inv)
-        # restart game when collision with wall or snake itself.
-        if abs(self.mySnake.xcor()) > 250 or abs(self.mySnake.ycor()) > 250:
-            self.reset()
-            self.play()
-        for seg in self.mySnake.segments[1::]:
-            if checkDis(self.mySnake.segments[0], seg):
+            if not checkDis(self.mySnake.pos(), self.myApple.pos()):
+                self.mySnake.clearstamps(1)
+                self.mySnake.segments.pop(0)
+            else:
+                self.score += 1
+                self.screen.title("Snake Game - Score: " + str(self.score))
+                if self.score % 5 == 0 and self.inv > 50:
+                    self.inv -= 50
+                self.myApple.newPos()
+            self.mySnake.forward(12.5)
+            self.mySnake.stamp()
+            self.mySnake.segments.append(self.mySnake.pos())
+            self.screen.update()
+            self.screen.ontimer(self.move, self.inv)
+            # restart game when collision with wall or snake itself.
+            if abs(self.mySnake.xcor()) > 250 or abs(self.mySnake.ycor()) > 250:
                 self.reset()
-                self.play()
+            for seg in self.mySnake.segments[1::]:
+                if checkDis(self.mySnake.segments[0], seg):
+                    self.reset()
+
+    def pause(self):
+        self.isPaused = not self.isPaused
 
     # game play control
     def play(self):
@@ -119,6 +129,7 @@ class Game:
         self.screen.onkey(self.mySnake.goDown, 'Down')
         self.screen.onkey(self.mySnake.goRight, 'Right')
         self.screen.onkey(self.mySnake.goLeft, 'Left')
+        self.screen.onkey(self.pause, 'p')
         self.screen.listen()
 
     # reset and restart game after game over
@@ -130,6 +141,12 @@ class Game:
         self.screenSetup()
         self.mySnake = Snake()
         self.myApple = Apple()
+        print("new----------------------------------------------")
+        self.screen.onkey(self.mySnake.goUp, 'Up')
+        self.screen.onkey(self.mySnake.goDown, 'Down')
+        self.screen.onkey(self.mySnake.goRight, 'Right')
+        self.screen.onkey(self.mySnake.goLeft, 'Left')
+        self.screen.onkey(self.pause, 'p')
 
 
 myGame = Game()
